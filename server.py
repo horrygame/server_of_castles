@@ -8,7 +8,7 @@ import jwt
 
 app = Flask(__name__)
 CORS(app)
-app.config['SECRET_KEY'] = 'your-secret-key-here'
+app.config['SECRET_KEY'] = 'medieval-battle-secret-key-2024'
 
 # Инициализация базы данных
 def init_db():
@@ -63,6 +63,9 @@ def register():
     if not username or not password or not email:
         return jsonify({'error': 'Все поля обязательны для заполнения'}), 400
     
+    if len(username) < 3:
+        return jsonify({'error': 'Имя пользователя должно содержать минимум 3 символа'}), 400
+    
     if len(password) < 6:
         return jsonify({'error': 'Пароль должен содержать минимум 6 символов'}), 400
     
@@ -79,7 +82,7 @@ def register():
         
         token = generate_token(user_id, username)
         return jsonify({
-            'message': 'Регистрация успешна',
+            'message': 'Регистрация успешна! Добро пожаловать в Битву Крепостей!',
             'token': token,
             'user': {
                 'id': user_id,
@@ -93,7 +96,7 @@ def register():
     except sqlite3.IntegrityError:
         return jsonify({'error': 'Пользователь с таким именем или email уже существует'}), 400
     except Exception as e:
-        return jsonify({'error': 'Ошибка сервера'}), 500
+        return jsonify({'error': 'Ошибка сервера: ' + str(e)}), 500
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -117,7 +120,7 @@ def login():
         if user:
             token = generate_token(user[0], user[1])
             return jsonify({
-                'message': 'Вход выполнен успешно',
+                'message': 'Вход выполнен успешно! С возвращением в Битву Крепостей!',
                 'token': token,
                 'user': {
                     'id': user[0],
@@ -131,7 +134,7 @@ def login():
             return jsonify({'error': 'Неверное имя пользователя или пароль'}), 401
             
     except Exception as e:
-        return jsonify({'error': 'Ошибка сервера'}), 500
+        return jsonify({'error': 'Ошибка сервера: ' + str(e)}), 500
 
 @app.route('/save_game', methods=['POST'])
 def save_game():
@@ -159,10 +162,10 @@ def save_game():
         conn.commit()
         conn.close()
         
-        return jsonify({'message': 'Игра сохранена'}), 200
+        return jsonify({'message': 'Прогресс игры успешно сохранен'}), 200
         
     except Exception as e:
-        return jsonify({'error': 'Ошибка сохранения'}), 500
+        return jsonify({'error': 'Ошибка сохранения: ' + str(e)}), 500
 
 @app.route('/load_game', methods=['GET'])
 def load_game():
@@ -185,6 +188,7 @@ def load_game():
         
         if user:
             import ast
+            owned_chars = ast.literal_eval(user[10]) if user[10] else ['white_guy']
             return jsonify({
                 'gold': user[4],
                 'energy': user[5],
@@ -192,19 +196,19 @@ def load_game():
                 'mine_level': user[7],
                 'energy_gen_level': user[8],
                 'castle_level': user[9],
-                'owned_characters': ast.literal_eval(user[10]) if user[10] else ['white_guy']
+                'owned_characters': owned_chars
             }), 200
         else:
             return jsonify({'error': 'Пользователь не найден'}), 404
             
     except Exception as e:
-        return jsonify({'error': 'Ошибка загрузки'}), 500
+        return jsonify({'error': 'Ошибка загрузки: ' + str(e)}), 500
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    return jsonify({'status': 'OK'}), 200
+    return jsonify({'status': 'OK', 'message': 'Сервер Битвы Крепостей работает'}), 200
 
 if __name__ == '__main__':
     init_db()
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=True)
